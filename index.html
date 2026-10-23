@@ -36,7 +36,6 @@
   <div class="header">
     <div class="brand">⚡ MacroSnap <span class="badge">IND</span></div>
     <div>
-      <button class="btn-small" onclick="setupKey()">🔑 API Key</button>
       <button class="btn-small" onclick="editGoals()">🎯 Goals</button>
     </div>
   </div>
@@ -76,7 +75,16 @@
 
   <script>
     const todayKey = 'macrosnap_meals_' + new Date().toISOString().slice(0, 10);
-    let targets = JSON.parse(localStorage.getItem('macrosnap_targets') || '{"cal":2450,"p":155,"c":280,"f":70}');
+   // Automatically save key from link without showing any prompt
+    if (window.location.hash.includes('key=')) {
+      const extractedKey = window.location.hash.split('key=')[1].split('&')[0];
+      if (extractedKey) {
+        localStorage.setItem('gemini_api_key', decodeURIComponent(extractedKey));
+        // Remove the key from the URL bar immediately so it stays clean
+        history.replaceState(null, null, window.location.pathname);
+      }
+    }
+ let targets = JSON.parse(localStorage.getItem('macrosnap_targets') || '{"cal":2450,"p":155,"c":280,"f":70}');
     let meals = JSON.parse(localStorage.getItem(todayKey) || '[]');
     let pendingItems = [];
 

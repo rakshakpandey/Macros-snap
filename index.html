@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#10b981">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MacroSnap">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3075/3075977.png">
+  <title>MacroSnap India</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { background: #090d16; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; padding-bottom: 110px; }
+    .header { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f293d; position: sticky; top: 0; background: #090d16ee; backdrop-filter: blur(8px); z-index: 20; }
+    .brand { font-size: 1.15rem; font-weight: 800; }
+    .badge { background: #f97316; font-size: 0.65rem; padding: 2px 6px; border-radius: 6px; }
+    .btn-small { background: #131926; border: 1px solid #232d42; color: #fff; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.75rem; cursor: pointer; }
+    .container { padding: 16px; max-width: 500px; margin: auto; }
+    .card { background: #131926; border: 1px solid #232d42; border-radius: 18px; padding: 16px; margin-bottom: 12px; }
+    .cal-title { font-size: 0.72rem; color: #94a3b8; font-weight: 700; }
+    .cal-num { font-size: 2.4rem; font-weight: 800; margin: 4px 0; color: #10b981; }
+    .macro-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .m-pill { background: #1b2336; border: 1px solid #28334d; border-radius: 12px; padding: 10px 8px; text-align: center; }
+    .m-label { font-size: 0.65rem; font-weight: 800; color: #94a3b8; }
+    .m-val { font-size: 0.95rem; font-weight: 800; margin-top: 4px; }
+    .action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; background: rgba(19, 25, 38, 0.92); border: 1px solid #232d42; backdrop-filter: blur(12px); padding: 8px 14px; border-radius: 99px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 40; }
+    .btn-write { background: #1e293b; border: 1px solid #334155; color: #fff; padding: 12px 18px; border-radius: 99px; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .btn-cam { width: 54px; height: 54px; background: #10b981; border-radius: 50%; border: 3px solid #090d16; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 6px 20px rgba(16,185,129,0.4); cursor: pointer; }
+    .sheet { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); display: none; align-items: flex-end; z-index: 100; }
+    .sheet.active { display: flex; }
+    .sheet-box { background: #131926; border-top: 1px solid #232d42; border-radius: 24px 24px 0 0; width: 100%; max-height: 88vh; padding: 20px; overflow-y: auto; }
+    .input { width: 100%; background: #090d16; border: 1px solid #232d42; color: #fff; padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; font-family: inherit; font-size: 0.9rem; }
+    .btn-action { width: 100%; background: #10b981; color: #000; padding: 14px; border-radius: 12px; font-weight: 800; border: none; font-size: 1rem; margin-top: 10px; cursor: pointer; }
+    .btn-sec { width: 100%; background: #1e293b; color: #fff; padding: 10px; border-radius: 10px; font-weight: 700; border: 1px solid #334155; font-size: 0.82rem; margin-bottom: 12px; cursor: pointer; }
+    .item-card { background: #090d16; padding: 12px; border-radius: 12px; border: 1px solid #1f293d; margin-bottom: 10px; position: relative; }
+    .btn-del-item { position: absolute; right: 10px; top: 10px; background: none; border: none; color: #ef4444; font-weight: 700; font-size: 0.75rem; cursor: pointer; }
+    .presets-title { font-size: 0.72rem; color: #94a3b8; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+    .presets-wrap { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+    .preset-pill { background: #1e293b; border: 1px solid #334155; color: #38bdf8; padding: 6px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">⚡ MacroSnap <span class="badge">IND</span></div>
+    <div>
+      <button class="btn-small" onclick="openManualWrite()">✍️ Write Meal</button>
+      <button class="btn-small" onclick="editGoals()">🎯 Goals</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="cal-title">REMAINING CALORIES TODAY</div>
+      <div class="cal-num" id="rem-cal">2,450</div>
+      <div style="font-size: 0.8rem; color:#94a3b8;">Target: <strong id="t-cal" style="color:#fff">2450</strong> | Eaten: <strong id="e-cal" style="color:#fff">0</strong> kcal</div>
+    </div>
+
+    <div class="macro-row">
+      <div class="m-pill"><div class="m-label" style="color:#38bdf8">PROTEIN</div><div class="m-val" id="p-val">0/155g</div></div>
+      <div class="m-pill"><div class="m-label" style="color:#fbbf24">CARBS</div><div class="m-val" id="c-val">0/280g</div></div>
+      <div class="m-pill"><div class="m-label" style="color:#f87171">FAT</div><div class="m-val" id="f-val">0/70g</div></div>
+    </div>
+
+    <h3 style="margin: 16px 0 10px; font-size: 1rem;">Today's Meals</h3>
+    <div id="meal-list"></div>
+  </div>
+
+  <div class="action-bar">
+    <button class="btn-write" onclick="openManualWrite()"><span>✍️</span> Type Meal</button>
+    <div class="btn-cam" onclick="triggerCamera()">📸</div>
+  </div>
+
+  <input type="file" id="img-input" accept="image/*" capture="environment" style="display:none" onchange="processImage(event)">
+
+  <div class="sheet" id="modal-entry">
+    <div class="sheet-box">
+      <h3 id="modal-title" style="margin-bottom: 4px;">Log Meal</h3>
+      <p id="modal-sub" style="font-size:0.75rem; color:#94a3b8; margin-bottom: 12px;">Review or customize items below</p>
+
+      <label style="font-size:0.75rem; color:#94a3b8;">Meal Name</label>
+      <input type="text" id="m-name" class="input" placeholder="e.g. Lunch: Dal, Rice & 2 Rotis">
+
+      <div class="presets-title">Quick Add Indian Items:</div>
+      <div class="presets-wrap">
+        <button type="button" class="preset-pill" onclick="addPreset('Roti', 60, 160, 5.4, 33, 1.2)">+ Roti (2 pcs)</button>
+        <button type="button" class="preset-pill" onclick="addPreset('Cooked Rice', 150, 195, 4.0, 42, 0.4)">+ White Rice (1 bowl)</button>
+        <button type="button" class="preset-pill" onclick="addPreset('Dal Tadka', 150, 177, 9.3, 22.5, 5.7)">+ Dal Tadka (1 bowl)</button>
+        <button type="button" class="preset-pill" onclick="addPreset('Paneer Sabzi', 120, 260, 10.0, 8.0, 20.0)">+ Paneer Sabzi</button>
+        <button type="button" class="preset-pill" onclick="addPreset('Boiled Eggs', 100, 155, 12.6, 1.1, 10.6)">+ 2 Boiled Eggs</button>
+        <button type="button" class="preset-pill" onclick="addPreset('Chicken Curry', 150, 240, 22.0, 4.5, 14.0)">+ Chicken Curry</button>
+        <button type="button" class="preset-pill" onclick="addPreset('Curd / Dahi', 100, 61, 3.5, 4.7, 3.3)">+ Curd (1 bowl)</button>
+      </div>
+
+      <div id="edit-items-box"></div>
+
+      <button type="button" class="btn-sec" onclick="addEmptyItem()">+ Add Custom Food Item</button>
+      <button class="btn-action" onclick="saveMeal()">Save to Food Diary</button>
+      <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#94a3b8; padding:12px; font-weight:700; cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    if (window.location.hash.includes('key=')) {
+      const extractedKey = window.location.hash.split('key=')[1].split('&')[0];
+      if (extractedKey) {
+        localStorage.setItem('gemini_api_key', decodeURIComponent(extractedKey));
+        history.replaceState(null, null, window.location.pathname);
+      }
+    }
+
+    const todayKey = 'macrosnap_meals_' + new Date().toISOString().slice(0, 10);
+    let targets = JSON.parse(localStorage.getItem('macrosnap_targets') || '{"cal":2450,"p":155,"c":280,"f":70}');
+    let meals = JSON.parse(localStorage.getItem(todayKey) || '[]');
+    let pendingItems = [];
+
+    function editGoals() {
+      const c = prompt('Daily Calories Goal (kcal):', targets.cal);
+      const p = prompt('Daily Protein Goal (g):', targets.p);
+      const cb = prompt('Daily Carbs Goal (g):', targets.c);
+      const f = prompt('Daily Fat Goal (g):', targets.f);
+      if (c && p && cb && f) {
+        targets = { cal: Number(c), p: Number(p), c: Number(cb), f: Number(f) };
+        localStorage.setItem('macrosnap_targets', JSON.stringify(targets));
+        render();
+      }
+    }
+
+    function render() {
+      const eaten = meals.reduce((acc, m) => {
+        acc.cal += Number(m.calories || 0);
+        acc.p += Number(m.protein || 0);
+        acc.c += Number(m.carbs || 0);
+        acc.f += Number(m.fat || 0);
+        return acc;
+      }, { cal: 0, p: 0, c: 0, f: 0 });
+
+      document.getElementById('rem-cal').textContent = Math.max(0, targets.cal - eaten.cal).toLocaleString();
+      document.getElementById('t-cal').textContent = targets.cal.toLocaleString();
+      document.getElementById('e-cal').textContent = eaten.cal.toLocaleString();
+      document.getElementById('p-val').textContent = eaten.p.toFixed(0) + '/' + targets.p + 'g';
+      document.getElementById('c-val').textContent = eaten.c.toFixed(0) + '/' + targets.c + 'g';
+      document.getElementById('f-val').textContent = eaten.f.toFixed(0) + '/' + targets.f + 'g';
+
+      const list = document.getElementById('meal-list');
+      if (meals.length === 0) {
+        list.innerHTML = '<div style="color:#64748b; font-size:0.85rem; padding:12px 0;">No meals logged yet today. Snap a photo or tap ✍️ Write Meal.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      meals.forEach((m, idx) => {
+        list.innerHTML += '<div class="card" style="display:flex; justify-content:space-between; align-items:center;">' +
+          '<div><strong>' + m.name + '</strong><br>' +
+          '<span style="font-size:0.75rem; color:#94a3b8;">' + m.calories + ' kcal • P:' + m.protein + 'g C:' + m.carbs + 'g F:' + m.fat + 'g</span></div>' +
+          '<button onclick="delMeal(' + idx + ')" style="background:none; border:none; color:#ef4444; font-weight:700; cursor:pointer;">Delete</button>' +
+        '</div>';
+      });
+    }
+
+    function openManualWrite() {
+      document.getElementById('modal-title').textContent = 'Write Meal Manually';
+      document.getElementById('modal-sub').textContent = 'Type foods or tap presets below';
+      document.getElementById('m-name').value = '';
+      pendingItems = [];
+      addEmptyItem();
+      document.getElementById('modal-entry').classList.add('active');
+    }
+
+    function addPreset(name, grams, cal, p, c, f) {
+      pendingItems.push({ food_name: name, portion_g: grams, calories: cal, protein: p, carbs: c, fat: f });
+      renderEditItems();
+    }
+
+    function addEmptyItem() {
+      pendingItems.push({ food_name: '', portion_g: 100, calories: 120, protein: 5, carbs: 15, fat: 3 });
+      renderEditItems();
+    }
+
+    function removeItem(idx) {
+      pendingItems.splice(idx, 1);
+      renderEditItems();
+    }
+
+    function renderEditItems() {
+      const box = document.getElementById('edit-items-box');
+      box.innerHTML = '';
+      pendingItems.forEach((it, idx) => {
+        box.innerHTML += '<div class="item-card">' +
+          '<button class="btn-del-item" onclick="removeItem(' + idx + ')">✕ Remove</button>' +
+          '<label style="font-size:0.7rem; color:#94a3b8;">Food Item Name</label>' +
+          '<input type="text" value="' + it.food_name + '" class="input" placeholder="e.g. 2 Chapati or Dal" onchange="pendingItems[' + idx + '].food_name = this.value">' +
+          '<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">' +
+            '<div><label style="font-size:0.65rem; color:#94a3b8;">Portion(g)</label><input type="number" value="' + it.portion_g + '" class="input" onchange="pendingItems[' + idx + '].portion_g = Number(this.value)"></div>' +
+            '<div><label style="font-size:0.65rem; color:#94a3b8;">Calories</label><input type="number" value="' + it.calories + '" class="input" onchange="pendingItems[' + idx + '].calories = Number(this.value)"></div>' +
+            '<div><label style="font-size:0.65rem; color:#38bdf8;">Protein(g)</label><input type="number" value="' + it.protein + '" class="input" onchange="pendingItems[' + idx + '].protein = Number(this.value)"></div>' +
+            '<div><label style="font-size:0.65rem; color:#fbbf24;">Carbs(g)</label><input type="number" value="' + it.carbs + '" class="input" onchange="pendingItems[' + idx + '].carbs = Number(this.value)"></div>' +
+          '</div>' +
+        '</div>';
+      });
+    }
+
+    function triggerCamera() {
+      const key = localStorage.getItem('gemini_api_key');
+      if (!key) {
+        const inputKey = prompt('Please enter your free Gemini API Key from Google AI Studio:');
+        if (inputKey) {
+          localStorage.setItem('gemini_api_key', inputKey.trim());
+          document.getElementById('img-input').click();
+        }
+        return;
+      }
+      document.getElementById('img-input').click();
+    }
+
+    function compressImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 1024;
+          let w = img.width, h = img.height;
+          if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          callback(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function processImage(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const apiKey = localStorage.getItem('gemini_api_key');
+      alert('Scanning meal with Gemini AI... please wait ~3 seconds.');
+
+      compressImage(file, async function(base64Data) {
+        const promptText = `Analyze this meal. Identify Indian & global foods (roti, dal, rice, sabzi, curries, chicken, eggs, dosa, etc.). Return realistic estimated portion grams & macros. Output ONLY raw JSON:
+{
+  "name": "e.g. Lunch: Dal, Rice & 2 Rotis",
+  "items": [
+    { "food_name": "Roti", "portion_g": 60, "calories": 160, "protein": 5.4, "carbs": 33.0, "fat": 1.2 }
+  ]
+}`;
+        try {
+          const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }, { inlineData: { mimeType: 'image/jpeg', data: base64Data } }] }],
+              generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
+            })
+          });
+
+          if (!res.ok) throw new Error(await res.text());
+          const resData = await res.json();
+          const clean = resData.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(clean);
+
+          document.getElementById('modal-title').textContent = 'Review & Edit AI Estimate';
+          document.getElementById('modal-sub').textContent = 'Adjust grams or items before saving';
+          document.getElementById('m-name').value = parsed.name || 'Meal';
+          pendingItems = parsed.items || [];
+          renderEditItems();
+          document.getElementById('modal-entry').classList.add('active');
+        } catch (err) {
+          alert('AI Analysis notice: ' + err.message);
+        }
+      });
+      e.target.value = '';
+    }
+
+    function saveMeal() {
+      const totalCal = pendingItems.reduce((s, i) => s + Number(i.calories || 0), 0);
+      const totalP = +pendingItems.reduce((s, i) => s + Number(i.protein || 0), 0).toFixed(1);
+      const totalC = +pendingItems.reduce((s, i) => s + Number(i.carbs || 0), 0).toFixed(1);
+      const totalF = +pendingItems.reduce((s, i) => s + Number(i.fat || 0), 0).toFixed(1);
+
+      meals.push({
+        name: document.getElementById('m-name').value.trim() || 'Meal',
+        calories: totalCal,
+        protein: totalP,
+        carbs: totalC,
+        fat: totalF
+      });
+
+      localStorage.setItem(todayKey, JSON.stringify(meals));
+      closeModal();
+      render();
+    }
+
+    function delMeal(idx) {
+      if (!confirm('Delete this meal?')) return;
+      meals.splice(idx, 1);
+      localStorage.setItem(todayKey, JSON.stringify(meals));
+      render();
+    }
+
+    function closeModal() {
+      document.getElementById('modal-entry').classList.remove('active');
+    }
+
+    render();
+  </script>
+</body>
+</html>

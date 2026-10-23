@@ -344,6 +344,201 @@
     render();
   </script>
 </body>
+</html>ontent = targets.cal.toLocaleString();
+      document.getElementById('e-cal').textContent = eaten.cal.toLocaleString();
+      document.getElementById('p-val').textContent = eaten.p.toFixed(0) + '/' + targets.p + 'g';
+      document.getElementById('c-val').textContent = eaten.c.toFixed(0) + '/' + targets.c + 'g';
+      document.getElementById('f-val').textContent = eaten.f.toFixed(0) + '/' + targets.f + 'g';
+
+      const list = document.getElementById('meal-list');
+      if (meals.length === 0) {
+        list.innerHTML = '<div style="color:#64748b; font-size:0.85rem; padding:12px 0;">No meals logged yet today. Snap a photo or tap ✍️ Write Meal.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      meals.forEach((m, idx) => {
+        list.innerHTML += `
+          <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <strong>${m.name}</strong><br>
+              <span style="font-size:0.75rem; color:#94a3b8;">
+                ${m.calories} kcal • P:${m.protein}g C:${m.carbs}g F:${m.fat}g
+              </span>
+            </div>
+            <button onclick="delMeal(${idx})" style="background:none; border:none; color:#ef4444; font-weight:700; cursor:pointer;">Delete</button>
+          </div>
+        `;
+      });
+    }
+
+    // Manual Entry Launcher
+    function openManualWrite() {
+      document.getElementById('modal-title').textContent = 'Write Meal Manually';
+      document.getElementById('modal-sub').textContent = 'Type foods or tap presets below';
+      document.getElementById('m-name').value = '';
+      pendingItems = [];
+      addEmptyItem();
+      document.getElementById('modal-entry').classList.add('active');
+    }
+
+    function addPreset(name, grams, cal, p, c, f) {
+      pendingItems.push({ food_name: name, portion_g: grams, calories: cal, protein: p, carbs: c, fat: f });
+      renderEditItems();
+    }
+
+    function addEmptyItem() {
+      pendingItems.push({ food_name: '', portion_g: 100, calories: 120, protein: 5, carbs: 15, fat: 3 });
+      renderEditItems();
+    }
+
+    function removeItem(idx) {
+      pendingItems.splice(idx, 1);
+      renderEditItems();
+    }
+
+    function renderEditItems() {
+      const box = document.getElementById('edit-items-box');
+      box.innerHTML = '';
+      pendingItems.forEach((it, idx) => {
+        box.innerHTML += `
+          <div class="item-card">
+            <button class="btn-del-item" onclick="removeItem(${idx})">✕ Remove</button>
+            <label style="font-size:0.7rem; color:#94a3b8;">Food Item Name</label>
+            <input type="text" value="${it.food_name}" class="input" placeholder="e.g. 2 Chapati or 1 Bowl Dal" onchange="pendingItems[${idx}].food_name = this.value">
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+              <div>
+                <label style="font-size:0.65rem; color:#94a3b8;">Portion(g)</label>
+                <input type="number" value="${it.portion_g}" class="input" onchange="pendingItems[${idx}].portion_g = Number(this.value)">
+              </div>
+              <div>
+                <label style="font-size:0.65rem; color:#94a3b8;">Calories</label>
+                <input type="number" value="${it.calories}" class="input" onchange="pendingItems[${idx}].calories = Number(this.value)">
+              </div>
+              <div>
+                <label style="font-size:0.65rem; color:#38bdf8;">Protein(g)</label>
+                <input type="number" value="${it.protein}" class="input" onchange="pendingItems[${idx}].protein = Number(this.value)">
+              </div>
+              <div>
+                <label style="font-size:0.65rem; color:#fbbf24;">Carbs(g)</label>
+                <input type="number" value="${it.carbs}" class="input" onchange="pendingItems[${idx}].carbs = Number(this.value)">
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Camera AI Trigger
+    function triggerCamera() {
+      const key = localStorage.getItem('gemini_api_key');
+      if (!key) {
+        const inputKey = prompt('Please enter your free Gemini API Key from Google AI Studio:');
+        if (inputKey) {
+          localStorage.setItem('gemini_api_key', inputKey.trim());
+          document.getElementById('img-input').click();
+        }
+        return;
+      }
+      document.getElementById('img-input').click();
+    }
+
+    // Photo Compression helper (prevents timeouts on 50MP phone cameras)
+    function compressImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 1024;
+          let w = img.width, h = img.height;
+          if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          callback(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function processImage(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const apiKey = localStorage.getItem('gemini_api_key');
+      alert('Scanning meal with Gemini AI... please wait ~3 seconds.');
+
+      compressImage(file, async function(base64Data) {
+        const promptText = `Analyze this meal. Identify Indian & global foods (roti, dal, rice, sabzi, curries, chicken, eggs, dosa, etc.). Return realistic estimated portion grams & macros. Output ONLY raw JSON:
+{
+  "name": "e.g. Lunch: Dal, Rice & 2 Rotis",
+  "items": [
+    { "food_name": "Roti", "portion_g": 60, "calories": 160, "protein": 5.4, "carbs": 33.0, "fat": 1.2 }
+  ]
+}`;
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }, { inlineData: { mimeType: "image/jpeg", data: base64Data } }] }],
+              generationConfig: { temperature: 0.2, responseMimeType: "application/json" }
+            })
+          });
+
+          if (!res.ok) throw new Error(await res.text());
+          const resData = await res.json();
+          const clean = resData.candidates[0].content.parts[0].text.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
+          const parsed = JSON.parse(clean);
+
+          document.getElementById('modal-title').textContent = 'Review & Edit AI Estimate';
+          document.getElementById('modal-sub').textContent = 'Adjust grams or items before saving';
+          document.getElementById('m-name').value = parsed.name || 'Meal';
+          pendingItems = parsed.items || [];
+          renderEditItems();
+          document.getElementById('modal-entry').classList.add('active');
+        } catch (err) {
+          alert('AI Analysis notice: ' + err.message);
+        }
+      });
+      e.target.value = '';
+    }
+
+    function saveMeal() {
+      const totalCal = pendingItems.reduce((s, i) => s + Number(i.calories || 0), 0);
+      const totalP = +pendingItems.reduce((s, i) => s + Number(i.protein || 0), 0).toFixed(1);
+      const totalC = +pendingItems.reduce((s, i) => s + Number(i.carbs || 0), 0).toFixed(1);
+      const totalF = +pendingItems.reduce((s, i) => s + Number(i.fat || 0), 0).toFixed(1);
+
+      meals.push({
+        name: document.getElementById('m-name').value.trim() || 'Meal',
+        calories: totalCal,
+        protein: totalP,
+        carbs: totalC,
+        fat: totalF
+      });
+
+      localStorage.setItem(todayKey, JSON.stringify(meals));
+      closeModal();
+      render();
+    }
+
+    function delMeal(idx) {
+      if (!confirm('Delete this meal?')) return;
+      meals.splice(idx, 1);
+      localStorage.setItem(todayKey, JSON.stringify(meals));
+      render();
+    }
+
+    function closeModal() {
+      document.getElementById('modal-entry').classList.remove('active');
+    }
+
+    render();
+  </script>
+</body>
 </html>Key}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
